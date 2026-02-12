@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator - Asset Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: monospace;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .btn {
+            background: #2563eb;
+            color: white;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #1e40af;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        #qrcode {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        #qrcode canvas {
+            margin: 0 auto;
+            border: 3px solid #2563eb;
+            border-radius: 8px;
+        }
+
+        .asset-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .asset-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #f8fafc;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .asset-item:hover {
+            background: #e2e8f0;
+        }
+
+        .info {
+            background: #dbeafe;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏷️ QR Code Generator</h1>
+            <p>Generate QR codes for your assets</p>
+        </header>
+
+        <div class="card">
+            <div class="info">
+                <strong>ℹ️ Instructions:</strong> Enter an asset tag or select from the list below to generate a QR code. You can print or save the generated QR code.
+            </div>
+
+            <div class="form-group">
+                <label for="assetTag">Asset Tag / QR Code Data:</label>
+                <input 
+                    type="text" 
+                    id="assetTag" 
+                    placeholder="e.g., WS-WSI-698-NGLA-AG-ZZZ-00000-LSSS-PLAT-PL0001"
+                >
+            </div>
+
+            <div class="form-group">
+                <label>QR Code Size:</label>
+                <select id="qrSize">
+                    <option value="256">Small (256x256)</option>
+                    <option value="512" selected>Medium (512x512)</option>
+                    <option value="1024">Large (1024x1024)</option>
+                </select>
+            </div>
+
+            <button class="btn" onclick="generateQR()">Generate QR Code</button>
+            <button class="btn btn-secondary" onclick="downloadQR()">Download QR Code</button>
+            <button class="btn btn-secondary" onclick="clearQR()">Clear</button>
+
+            <div id="qrcode"></div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom: 15px;">Load Assets from Database</h3>
+            <button class="btn" onclick="loadAssets()">Load Asset List</button>
+            <div id="assetListContainer" style="margin-top: 20px; display: none;">
+                <p style="margin-bottom: 10px; color: #64748b;">Click on an asset to generate its QR code:</p>
+                <div id="assetList" class="asset-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        let qrCode = null;
+        let currentAssetTag = '';
+
+        function generateQR() {
+            const assetTag = document.getElementById('assetTag').value.trim();
+            
+            if (!assetTag) {
+                alert('Please enter an asset tag');
+                return;
+            }
+
+            currentAssetTag = assetTag;
+            clearQR();
+
+            const size = parseInt(document.getElementById('qrSize').value);
+            
+            qrCode = new QRCode(document.getElementById('qrcode'), {
+                text: assetTag,
+                width: size,
+                height: size,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        function clearQR() {
+            document.getElementById('qrcode').innerHTML = '';
+            qrCode = null;
+        }
+
+        function downloadQR() {
+            if (!qrCode) {
+                alert('Please generate a QR code first');
+                return;
+            }
+
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) {
+                alert('No QR code to download');
+                return;
+            }
+
+            const url = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `qr-${currentAssetTag.replace(/[^a-zA-Z0-9]/g, '-')}.png`;
+            link.href = url;
+            link.click();
+        }
+
+        async function loadAssets() {
+            try {
+                const response = await fetch('assets.json');
+                const assets = await response.json();
+                
+                const assetList = document.getElementById('assetList');
+                const container = document.getElementById('assetListContainer');
+                
+                assetList.innerHTML = '';
+                
+                const assetKeys = Object.keys(assets).slice(0, 100); // Show first 100
+                
+                assetKeys.forEach(key => {
+                    const asset = assets[key];
+                    const item = document.createElement('div');
+                    item.className = 'asset-item';
+                    item.textContent = asset.fullUniqueAssetTag || key;
+                    item.onclick = () => {
+                        document.getElementById('assetTag').value = asset.fullUniqueAssetTag || key;
+                        generateQR();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    };
+                    assetList.appendChild(item);
+                });
+
+                if (Object.keys(assets).length > 100) {
+                    const moreInfo = document.createElement('div');
+                    moreInfo.style.padding = '10px';
+                    moreInfo.style.textAlign = 'center';
+                    moreInfo.style.color = '#64748b';
+                    moreInfo.textContent = `Showing first 100 of ${Object.keys(assets).length} assets`;
+                    assetList.appendChild(moreInfo);
+                }
+
+                container.style.display = 'block';
+
+            } catch (error) {
+                alert('Error loading assets: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "name": "asset-qr-system",
+  "version": "1.0.0",
+  "description": "Asset QR Code Management System - Scan and track assets",
+  "main": "app.js",
+  "scripts": {
+    "convert": "node data-converter.js",
+    "serve": "npx http-server -p 8000",
+    "serve-https": "npx http-server -p 8000 -S -C cert.pem -K key.pem"
+  },
+  "keywords": [
+    "qr-code",
+    "asset-management",
+    "inventory",
+    "tracking",
+    "scanner"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/asset-qr-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/asset-qr-system/issues"
+  },
+  "homepage": "https://github.com/yourusername/asset-qr-system#readme"
+}
